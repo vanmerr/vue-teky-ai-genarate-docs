@@ -1,0 +1,34 @@
+
+:root {
+  --white-color: #ffffff;
+  --black-color: #000000;
+  --primary-color: rgb(140, 82, 186);
+  --secondary-color: rgb(0, 147, 164);
+  --text-primary-color: rgb(51, 51, 51);
+  --text-secondary-color: rgb(91, 103, 112);
+  --text-normal: 13px;
+  --text-heading: 32px;
+  --text-title: 22px;
+  --text-subtitle: 14px;
+  --font-weight-heading: 700;
+  --font-weight-title: 600;
+}
+
+
+
+body {
+  background-color: var(--white-color);
+  color: var(--text-primary-color);
+  font-family: 'Metropolis', sans-serif;
+  font-size: var(--text-normal);
+}
+
+button, input, select, textarea{
+  outline: none;
+  border: none;
+  border-radius: 5px;
+}
+
+button:hover{
+  opacity: 0.9;
+}
