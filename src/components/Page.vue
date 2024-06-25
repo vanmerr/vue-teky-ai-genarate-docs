@@ -404,9 +404,12 @@ export default {
   width: 250px;
   color: var(--text-primary-color);
   border: 1px solid var(--text-secondary-color);
-  &::-webkit-scrollbar {
-    width: 0px; /* Độ rộng của thanh cuộn */
-  }
+  /* &::-webkit-scrollbar {
+    width: 0px; /* Độ rộng của thanh cuộn 
+    } */
+}
+.selectActivity .activity-description textarea::-webkit-scrollbar {
+  width: 0px;
 }
 
 .main {
