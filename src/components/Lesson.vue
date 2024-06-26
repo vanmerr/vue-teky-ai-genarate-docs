@@ -211,6 +211,7 @@ export default {
   .body{
     color: var(--secondary-color);
     font-size: var(--text-title);
+    margin-bottom: 0px;
   }
   .instruction a{
     color: var(--secondary-color);
@@ -224,10 +225,12 @@ export default {
   .phara{
     color: var(--black-color);
     font-size: var(--text-normal);
+    margin-bottom: 0px;
   }
   .concept{
     color: var(--primary-color);
     font-size: 18px;
     font: bold;
+    margin-bottom: 0px;
   }
 </style>
