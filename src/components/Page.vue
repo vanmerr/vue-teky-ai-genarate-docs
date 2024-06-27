@@ -282,7 +282,7 @@ export default {
         this.showLogout = false; // Hide logout initially
         
         // Make a POST request to your backend API
-        fetch('http://localhost:3000/api/auth/signin', {
+        fetch('https://us-central1-testjsonloop.cloudfunctions.net/app/api/auth/signin', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
