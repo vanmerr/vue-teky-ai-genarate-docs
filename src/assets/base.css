@@ -6,12 +6,17 @@
   --secondary-color: rgb(0, 147, 164);
   --text-primary-color: rgb(51, 51, 51);
   --text-secondary-color: rgb(91, 103, 112);
+  --background-color: #f6f6f6;
   --text-normal: 13px;
   --text-heading: 32px;
   --text-title: 22px;
   --text-subtitle: 14px;
   --font-weight-heading: 700;
-  --font-weight-title: 600;
+  --font-weight-title: 550;
+}
+
+html{
+  scroll-behavior: smooth;
 }
 
 

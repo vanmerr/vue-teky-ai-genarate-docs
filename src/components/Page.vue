@@ -1,58 +1,46 @@
 <template>
   <div class="body">
-    <nav class="navbar">
+    <div class="chat-ai" @click="clickAI">
+      <img src="../assets/chat.png" alt="" />
+    </div>
+    <nav class="navbar" v-if="showAI">
       <!-- logo and login/logout -->
       <div class="navbar-brand">
         <img alt="Teky logo" src="../assets/logo.svg" />
-        <button type="button" class="navbar-login-gg">Login</button>
+        <button type="button" class="navbar-login-gg" @click="onLoginGG">Login</button>
       </div>
       <div class="navbar-select">
         <!-- select course -->
         <div class="select-container">
           <select v-model="selectedCourse" @change="onCourseChange">
             <option value="">Select course</option>
-            <option
-              v-for="course in courses"
-              :key="course.id"
-              :value="course.id"
-            >
-              {{ course.name }}
+            <option v-for="course in courses" :key="course.courseId" :value="course.courseId">
+              {{ course.courseName }}
             </option>
           </select>
         </div>
         <!-- select level -->
         <div class="select-container">
-          <select
-            v-model="selectedLevel"
-            :disabled="!selectedCourse"
-            @change="onLevelChange"
-          >
+          <select v-model="selectedLevel" :disabled="!selectedCourse" @change="onLevelChange">
             <option value="">Select level</option>
-            <option
-              v-for="level in getLevels(selectedCourse)"
-              :key="level.id"
-              :value="level.id"
-            >
-              {{ level.name }}
+            <option v-for="level in levels" :key="level.levelId" :value="level.levelId">
+              {{ level.levelName }}
             </option>
           </select>
         </div>
         <!-- select lesson -->
         <div class="select-container">
-          <select v-model="selectedLesson" :disabled="!selectedLevel">
+          <select v-model="selectedLesson" :disabled="!selectedLevel" @change="onChangeLesson">
             <option value="">Select lesson</option>
-            <option
-              v-for="lesson in getLessons(selectedCourse, selectedLevel)"
-              :key="lesson.id"
-              :value="lesson.id"
-            >
-              {{ lesson.name }}
+            <option v-for="lesson in lessons" :key="lesson.lessonId" :value="lesson.lessonId">
+              {{ lesson.lessonName }}
             </option>
           </select>
         </div>
         <!-- select generate -->
         <div class="select-container" v-if="selectedLesson">
-          <select v-model="selectedGenerate">
+          <select v-model="selectedGenerate" @change="onChangeGenerate">
+            <option value="">Generate</option>
             <option value="1">Concept Definition</option>
             <option value="2">Quiz</option>
             <option value="3">Project Instruction</option>
@@ -64,11 +52,7 @@
           <div class="type">
             <div class="title">Types</div>
             <div class="group" v-for="type in typequiz" :key="type.id">
-              <input
-                type="checkbox"
-                :value="type.name"
-                v-model="selectedTypes"
-              />
+              <input type="checkbox" :value="type.name" v-model="selectedTypes" />
               <label>{{ type.name }}</label>
             </div>
           </div>
@@ -80,16 +64,8 @@
           </div>
           <div class="hardness">
             <div class="title">Hardness</div>
-            <div
-              class="group"
-              v-for="hardness in hardnessLevels"
-              :key="hardness"
-            >
-              <input
-                type="checkbox"
-                :value="hardness"
-                v-model="selectedHardness"
-              />
+            <div class="group" v-for="hardness in hardnessLevels" :key="hardness">
+              <input type="checkbox" :value="hardness" v-model="selectedHardness" />
               <label>{{ hardness }}</label>
             </div>
           </div>
@@ -104,35 +80,29 @@
           </div>
           <div class="activity-description">
             <div class="title">Activity Description</div>
-            <textarea
-              v-model="activityDescription"
-              rows="5"
-              spellcheck="false"
-            ></textarea>
+            <textarea v-model="activityDescription" rows="5" spellcheck="false"></textarea>
           </div>
         </div>
         <!-- button generate -->
-        <div
-          class="selectedGenerate"
-          v-if="
-            selectedLesson &&
-            (selectedGenerate == '1' ||
-              selectedGenerate == '3' ||
-              (selectedTypes.length > 0 && selectedHardness.length > 0) ||
-              selectedGenerate == '4')
-          "
-        >
+        <div class="selectedGenerate" v-if="
+          selectedLesson &&
+          (selectedGenerate == '1' ||
+            selectedGenerate == '3' ||
+            (selectedTypes.length > 0 && selectedHardness.length > 0) ||
+            activityDescription.length > 0)
+        ">
           <button type="button" @click="onGenerate">Generate</button>
         </div>
       </div>
     </nav>
     <main class="main">
-      <Course />
-      <Lesson />
-      <ConceptDefinition />
-      <ProjectInstruction />
-      <Activity />
-      <Quiz />
+      <Course id="course" v-if="selectedCourse" :course="course" />
+      <Level id="level" v-if="selectedLevel" :level="level" />
+      <Lesson id="lesson" v-if="selectedLesson" />
+      <ConceptDefinition id="conceptDefinition" v-if="selectedGenerate === '1'" />
+      <Quiz id='quiz' v-if="selectedGenerate === '2'" />
+      <ProjectInstruction id="projectInstruction" v-if="selectedGenerate === '3'" />
+      <Activity id="activity" v-if="selectedGenerate === '4'" />
     </main>
   </div>
 </template>
@@ -144,6 +114,8 @@ import Lesson from "./Lesson.vue";
 import Quiz from "./Quiz.vue";
 import ProjectInstruction from "./ProjectInstruction.vue";
 import Activity from "./Activity.vue";
+import Level from "./Level.vue";
+import services from "@/services";
 
 export default {
   name: "Page",
@@ -154,9 +126,12 @@ export default {
     Quiz,
     ProjectInstruction,
     Activity,
+    Level,
   },
   data() {
     return {
+      showAI: false,
+      showGenerate: false,
       selectedCourse: "",
       selectedLevel: "",
       selectedLesson: "",
@@ -166,6 +141,8 @@ export default {
       activityDescription: "",
       selectedNumberActivyti: 1,
       selectedHardness: [],
+      course: {},
+      level: {},
       typequiz: [
         { id: 1, name: "Multiple Choice" },
         { id: 2, name: "True/False" },
@@ -176,86 +153,82 @@ export default {
         { id: 7, name: "Diagram Labeling" },
       ],
       hardnessLevels: ["Easy", "Medium", "Hard"],
-      courses: [
-        {
-          id: 1,
-          name: "Course 1",
-          levels: [
-            {
-              id: 1,
-              name: "Level 1.1",
-              lessons: [
-                { id: 1, name: "Lesson 1.1.1" },
-                { id: 2, name: "Lesson 1.1.2" },
-              ],
-            },
-            {
-              id: 2,
-              name: "Level 2.1",
-              lessons: [
-                { id: 3, name: "Lesson 2.1.1" },
-                { id: 4, name: "Lesson 2.1.2" },
-              ],
-            },
-          ],
-        },
-        {
-          id: 2,
-          name: "Course 2",
-          levels: [
-            {
-              id: 3,
-              name: "Level 1.1",
-              lessons: [
-                { id: 5, name: "Lesson 1.1.1" },
-                { id: 6, name: "Lesson 1.1.2" },
-              ],
-            },
-            {
-              id: 4,
-              name: "Level 2.1",
-              lessons: [
-                { id: 7, name: "Lesson 2.1.1" },
-                { id: 8, name: "Lesson 2.1.2" },
-              ],
-            },
-          ],
-        },
-      ],
+      courses: [],
+      levels: [],
+      lessons: [],
     };
   },
+  async created() {
+    await this.fetchCourses();
+  },
   methods: {
-    onCourseChange() {
+    clickAI() {
+      this.showAI = !this.showAI;
+    },
+    async onCourseChange() {
       this.selectedLevel = "";
       this.selectedLesson = "";
+      this.selectedGenerate = "";
+      await Promise.all([this.fetchLevels(), this.fetchCourse()]);
+      window.location.href = "#course";
     },
-    onLevelChange() {
+    async onLevelChange() {
       this.selectedLesson = "";
+      this.selectedGenerate = "";
+      await Promise.all([this.fetchLessons(), this.fetchLevel()]);
+      window.location.href = "#level";
     },
-    getLevels(courseId) {
-      const course = this.courses.find(
-        (course) => course.id === parseInt(courseId)
-      );
-      return course ? course.levels : [];
+    onChangeLesson() {
+      window.location.href = "#lesson";
     },
-    getLessons(courseId, levelId) {
-      const course = this.courses.find(
-        (course) => course.id === parseInt(courseId)
-      );
-      if (!course) return [];
-      const level = course.levels.find(
-        (level) => level.id === parseInt(levelId)
-      );
-      return level ? level.lessons : [];
+    async fetchCourses() {
+      try {
+        this.courses = await services.getCourses()
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      }
+    },
+    async fetchLevels() {
+      try {
+        this.levels = await services.getLevels(this.selectedCourse);
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      }
+    },
+    async fetchLessons() {
+      try {
+        this.lessons = await services.getLessons(this.selectedCourse, this.selectedLevel);
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      }
+    },
+    async fetchCourse() {
+      try {
+        this.course = await services.getCourse(this.selectedCourse);
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      }
+    },
+    async fetchLevel() {
+      try {
+        this.level = await services.getLevel(this.selectedCourse, this.selectedLevel);
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      }
     },
     onGenerate() {
+
+      this.showAI = !this.showAI;
+      this.showGenerate = !this.showGenerate;
       if (this.selectedGenerate == "1") {
+        window.location.href = "#conceptDefinition"
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
           lesson: this.selectedLesson,
         });
       } else if (this.selectedGenerate == "2") {
+        window.location.href = "#quiz"
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
@@ -266,12 +239,14 @@ export default {
           hardness: this.selectedHardness,
         });
       } else if (this.selectedGenerate == "3") {
+        window.location.href = "#projectInstruction"
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
           lesson: this.selectedLesson,
         });
       } else if (this.selectedGenerate == "4") {
+        window.location.href = "#activity";
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
@@ -281,10 +256,13 @@ export default {
         });
       }
     },
+    onLoginGG : async () => {
+      
+    }
   },
   mounted() {
     this.selectedCourse = "";
-    this.selectedGenerate = "1";
+    this.selectedGenerate = "";
   },
 };
 </script>
@@ -292,15 +270,41 @@ export default {
 <style scoped>
 .body {
   width: 100%;
+  position: relative;
   display: flex;
   justify-content: space-between;
 }
+
+.chat-ai {
+  position: fixed;
+  bottom: 50px;
+  right: 50px;
+  width: 75px;
+  height: 75px;
+  z-index: 9999;
+  overflow: hidden;
+  border-radius: 50%;
+  cursor: pointer;
+
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 .navbar {
+  position: fixed;
+  bottom: 125px;
+  right: 50px;
   box-shadow: rgba(0, 0, 0, 0.05) 0px 0px 0px 1px;
   border-radius: 5px;
   width: 400px;
-  background-color: var(--white-color);
-  overflow: hidden;
+  height: 400px;
+  background-color: var(--background-color);
+  overflow-y: auto;
+  &::-webkit-scrollbar {
+    display: none; /* Ẩn thanh cuộn */
+}
 }
 
 .navbar-brand {
@@ -311,9 +315,11 @@ export default {
   justify-content: space-between;
   margin-bottom: 30px;
 }
+
 .navbar-brand img {
   margin-left: 5px;
 }
+
 .navbar-brand button {
   margin-right: 5px;
   width: 80px;
@@ -327,6 +333,7 @@ export default {
 .navbar-select {
   width: 100%;
 }
+
 .select-container,
 .selectedGenerate,
 .selectQuiz,
@@ -335,12 +342,14 @@ export default {
   margin: 10px auto;
   height: 40px;
 }
+
 .selectQuiz,
 .selectActivity {
   display: flex;
   justify-content: space-between;
   height: auto;
 }
+
 .select-container select {
   width: 100%;
   height: 100%;
@@ -355,7 +364,7 @@ export default {
 .selectedGenerate {
   display: flex;
   align-items: center;
-  justify-content: end;
+  justify-content: center;
 }
 
 .selectedGenerate button {
@@ -367,6 +376,7 @@ export default {
   background-color: var(--secondary-color);
   cursor: pointer;
 }
+
 .select-container select:hover {
   opacity: 0.9;
 }
@@ -400,16 +410,20 @@ export default {
   color: var(--secondary-color);
   cursor: pointer;
 }
+
 .selectActivity .activity-description textarea {
   width: 250px;
   color: var(--text-primary-color);
   border: 1px solid var(--text-secondary-color);
+
   &::-webkit-scrollbar {
-    width: 0px; /* Độ rộng của thanh cuộn */
+    width: 0px;
+    /* Độ rộng của thanh cuộn */
   }
 }
 
 .main {
   width: 700px;
+  margin: auto;
 }
 </style>
