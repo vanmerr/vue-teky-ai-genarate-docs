@@ -7,7 +7,18 @@
       <!-- logo and login/logout -->
       <div class="navbar-brand">
         <img alt="Teky logo" src="../assets/logo.svg" />
-        <button type="button" class="navbar-login-gg" @click="onLoginGG">Login</button>
+        <button v-if="!userProfile" type="button" class="navbar-login-gg" @click="onLoginGG">Login</button>
+        <div v-if="userProfile" class="user-profile" @mouseover="toggleLogout(true)" @mouseleave="toggleLogout(false)">
+          <div class="user-info">
+            <span>Hello, {{ userProfile.displayName }}</span>
+          </div>
+          <img :src="userProfile.photoURL" alt="Profile Image" />
+          <div v-if="showLogout" class="logout-list">
+            <ul>
+              <li @click="onLogout">Logout</li>
+            </ul>
+          </div>
+        </div>
       </div>
       <div class="navbar-select">
         <!-- select course -->
@@ -116,6 +127,8 @@ import ProjectInstruction from "./ProjectInstruction.vue";
 import Activity from "./Activity.vue";
 import Level from "./Level.vue";
 import services from "@/services";
+import { auth, provider } from "../../firebaseConfig"; // Adjust the path according to your project structure
+import { signInWithPopup, signOut } from "firebase/auth";
 
 export default {
   name: "Page",
@@ -156,10 +169,13 @@ export default {
       courses: [],
       levels: [],
       lessons: [],
+      userProfile: null,
+      showLogout: false,
     };
   },
   async created() {
     await this.fetchCourses();
+    this.checkLoginState();
   },
   methods: {
     clickAI() {
@@ -183,52 +199,112 @@ export default {
     },
     async fetchCourses() {
       try {
-        this.courses = await services.getCourses()
+        this.courses = await services.getCourses();
       } catch (error) {
-        console.error('Error fetching courses:', error)
+        console.error('Error fetching courses:', error);
       }
     },
     async fetchLevels() {
       try {
         this.levels = await services.getLevels(this.selectedCourse);
       } catch (error) {
-        console.error('Error fetching courses:', error)
+        console.error('Error fetching levels:', error);
       }
     },
     async fetchLessons() {
       try {
         this.lessons = await services.getLessons(this.selectedCourse, this.selectedLevel);
       } catch (error) {
-        console.error('Error fetching courses:', error)
+        console.error('Error fetching lessons:', error);
       }
     },
     async fetchCourse() {
       try {
         this.course = await services.getCourse(this.selectedCourse);
       } catch (error) {
-        console.error('Error fetching courses:', error)
+        console.error('Error fetching course:', error);
       }
     },
     async fetchLevel() {
       try {
         this.level = await services.getLevel(this.selectedCourse, this.selectedLevel);
       } catch (error) {
-        console.error('Error fetching courses:', error)
+        console.error('Error fetching level:', error);
       }
     },
-    onGenerate() {
+    toggleLogout(show) {
+      this.showLogout = show;
+    },
+    async onLoginGG() {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        const googleToken = await result.user.getIdToken();
+        localStorage.setItem("userToken", googleToken);
+        console.log("User signed in with Google:", result.user);
+        
+        // Fetch user profile
+        this.userProfile = result.user;
+        this.showLogout = false; // Hide logout initially
+        
+        // Now make a POST request to your backend API
+        const response = await fetch('http://localhost:3000/api/auth/signin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${googleToken}`
+          },
+          body: JSON.stringify({ token: googleToken }) // Adjust the body as per your API requirements
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to authenticate with backend');
+        }
+        
+        // Handle response or further actions as needed
+        const data = await response.json();
+        console.log('Backend response:', data);
+        
+      } catch (error) {
+        console.error("Error during sign-in:", error);
+      }
+    },
+    checkLoginState() {
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          user.getIdToken().then(token => {
+            localStorage.setItem("userToken", token);
+            console.log("User is logged in:", user);
+            this.userProfile = user;
+            this.showLogout = false; // Hide logout initially
+          }).catch(error => {
+            console.error("Error getting token:", error);
+          });
+        }
+      });
+    },
+    async onLogout() {
+      try {
+        await signOut(auth);
+        localStorage.removeItem("userToken");
+        this.userProfile = null;
+        console.log("User logged out");
+      } catch (error) {
+        console.error("Error during logout:", error);
+      }
+    },
 
+    onGenerate() {
       this.showAI = !this.showAI;
       this.showGenerate = !this.showGenerate;
       if (this.selectedGenerate == "1") {
-        window.location.href = "#conceptDefinition"
+        window.location.href = "#conceptDefinition";
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
           lesson: this.selectedLesson,
         });
       } else if (this.selectedGenerate == "2") {
-        window.location.href = "#quiz"
+        window.location.href = "#quiz";
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
@@ -239,7 +315,7 @@ export default {
           hardness: this.selectedHardness,
         });
       } else if (this.selectedGenerate == "3") {
-        window.location.href = "#projectInstruction"
+        window.location.href = "#projectInstruction";
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
@@ -256,9 +332,6 @@ export default {
         });
       }
     },
-    onLoginGG : async () => {
-      
-    }
   },
   mounted() {
     this.selectedCourse = "";
@@ -425,5 +498,54 @@ export default {
 .main {
   width: 700px;
   margin: auto;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  position: relative;
+  right: 10px;
+}
+
+.user-profile img {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.user-info span{
+  font-family: 'Metropolis', sans-serif;
+  font-size: var(--text-subtitle);
+}
+
+.logout-list {
+  position: absolute;
+  bottom: -40px;
+  left: 30px;
+  width: 80px;
+  background-color: var(--background-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: 5px;
+  display: none;
+}
+
+.user-profile:hover .logout-list {
+  display: block;
+}
+
+.logout-list ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.logout-list ul li {
+  padding: 10px;
+  cursor: pointer;
+}
+
+.logout-list ul li:hover {
+  background-color: #f0f0f0;
 }
 </style>
