@@ -42,8 +42,7 @@ export default {
 
 <style scoped>
 .course {
-  max-width: 800px;
-  min-width: 500px;
+  width: 100%;
   padding: 10px 20px;
   border-radius: 5px;
   box-shadow: rgba(0, 0, 0, 0.05) 0px 0px 0px 1px;
