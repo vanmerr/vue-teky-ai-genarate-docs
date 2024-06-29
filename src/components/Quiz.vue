@@ -17,7 +17,7 @@
           <tr  v-for="question in quiz">
             <td class="stt">{{ question.ID }}</td>
             <td class="type">{{ question.questionType }}</td>
-            <td class="questionDifficulty">{{ question.uestionDifficulty }}</td>
+            <td class="questionDifficulty">{{ question.questionDifficulty }}</td>
             <td class="question">{{ question.questionText }}</td>
             <td class="answer">{{ question.answer1}}</td>
             <td class="answer">{{ question.answer2}}</td>
