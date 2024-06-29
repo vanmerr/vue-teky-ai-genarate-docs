@@ -1,5 +1,6 @@
 <template>
     <div class="quiz" v-if="quiz.length > 0">
+      <span class="tilte">Quiz generate</span>
       <table>
         <thead>
           <tr>
@@ -46,6 +47,14 @@ export default {
     width: 0px;
     /* Độ rộng của thanh cuộn */
   }
+}
+
+.tilte{
+  display: block;
+  font-size: var(--text-title);
+  font-weight: var(--font-weight-title);
+  color: var(--primary-color);
+  margin: 10px;
 }
 table {
   min-width: 1230px;

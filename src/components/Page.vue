@@ -7,13 +7,11 @@
       <!-- logo and login/logout -->
       <div class="navbar-brand">
         <img alt="Teky logo" src="../assets/logo.svg" />
-        <button v-if="!userProfile" type="button" class="navbar-login-gg" @click="onLoginGG">Login</button>
-        <div v-if="userProfile" class="user-info">
-          <span>Hello, {{ userProfile.displayName }}</span>
-        </div>
-        <div v-if="userProfile" class="user-profile" @mouseover="toggleLogout(true)" @mouseleave="toggleLogout(false)">
-          <img :src="userProfile.photoURL" alt="Profile Image" />
-          <div v-if="showLogout" class="logout-list">
+        <button v-if="!user.info" type="button" class="navbar-login-gg" @click="onLoginGG">Login</button>
+        <div v-if="user.info" class="user-profile">
+          <span>Hello, {{ user.info.displayName }}</span>
+          <img :src="user.info.photoURL" alt="Profile Image" />
+          <div class="logout-list">
             <ul>
               <li @click="onLogout">Logout</li>
             </ul>
@@ -50,7 +48,7 @@
           </select>
         </div>
         <!-- select generate -->
-        <div class="select-container" v-if="selectedLesson">
+        <div class="select-container" v-if="selectedLesson && user.role === 'admin'">
           <select v-model="selectedGenerate" @change="onChangeGenerate">
             <option value="">Generate</option>
             <option value="1">Concept Definition</option>
@@ -71,16 +69,12 @@
           <div class="hardness">
             <div class="title">Hardness</div>
             <div class="group" v-for="hardness in hardnessLevels" :key="hardness">
-              <input 
-                type="checkbox" 
-                :value="hardness" 
-                v-model="selectedHardness"
-                @change="updateQuestionCounts(hardness)"
-              />
+              <input type="checkbox" :value="hardness" v-model="selectedHardness"
+                @change="updateQuestionCounts(hardness)" />
               <label>{{ hardness }}</label>
             </div>
           </div>
-          
+
           <div class="question-counts">
             <div class="title">Number of Questions</div>
             <div v-if="selectedHardness.length === 0" class="empty-message">
@@ -88,12 +82,9 @@
             </div>
             <div class="count-group" v-for="hardness in selectedHardness" :key="hardness">
               <label>{{ hardness }}:</label>
-              <select 
-                v-model="questionCounts[hardness.toLowerCase()]"
-                :disabled="selectedHardness.length === 0"
-                @change="adjustQuestionCounts(hardness)"
-              >
-                <option v-for="n in 16" :key="n-1" :value="n-1">{{ n-1 }}</option>
+              <select v-model="questionCounts[hardness.toLowerCase()]" :disabled="selectedHardness.length === 0"
+                @change="adjustQuestionCounts(hardness)">
+                <option v-for="n in 16" :key="n - 1" :value="n - 1">{{ n - 1 }}</option>
               </select>
             </div>
           </div>
@@ -130,11 +121,22 @@
       <Course id="course" v-if="selectedCourse" :course="course" />
       <Level id="level" v-if="selectedLevel" :level="level" />
       <Lesson id="lesson" v-if="selectedLesson" />
+    </main>
+    <footer id="generate" class="footer" v-if="selectedGenerate">
+      <div class="creating" v-if="creating">
+        <div class="loading">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
       <ConceptDefinition id="conceptDefinition" v-if="selectedGenerate === '1'" />
       <Quiz id='quiz' v-if="selectedGenerate === '2'" :quiz="quiz" />
       <ProjectInstruction id="projectInstruction" v-if="selectedGenerate === '3'" />
       <Activity id="activity" v-if="selectedGenerate === '4'" />
-    </main>
+    </footer>
   </div>
 </template>
 
@@ -148,7 +150,7 @@ import Activity from "./Activity.vue";
 import Level from "./Level.vue";
 import services from "@/services";
 import { auth, provider } from "../../firebaseConfig"; // Adjust the path according to your project structure
-import { signInWithPopup, signOut } from "firebase/auth";
+import { signInWithPopup, signOut, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
 
 export default {
   name: "Page",
@@ -163,8 +165,8 @@ export default {
   },
   data() {
     return {
+      creating: false,
       showAI: false,
-      showGenerate: false,
       selectedCourse: "",
       selectedLevel: "",
       selectedLesson: "",
@@ -195,13 +197,15 @@ export default {
       courses: [],
       levels: [],
       lessons: [],
-      userProfile: null,
-      showLogout: false,
+      user: {
+        info: null,
+        role: "user"
+      },
     };
   },
   async created() {
     await this.fetchCourses();
-    this.checkLoginState();
+    await this.autoLogin();
   },
   computed: {
     totalQuestions() {
@@ -266,70 +270,54 @@ export default {
         console.error('Error fetching level:', error);
       }
     },
-    toggleLogout(show) {
-      this.showLogout = show;
-    },
     async onLoginGG() {
       try {
         const result = await signInWithPopup(auth, provider);
-        const googleToken = await result.user.getIdToken();
-        const email = result.user.email;
-        const displayName = result.user.displayName;
-        localStorage.setItem("userToken", googleToken);
-        console.log("User signed in with Google:", result.user);
-        
-        // Fetch user profile
-        this.userProfile = result.user;
-        this.showLogout = false; // Hide logout initially
-        
+        this.user.info = auth.currentUser;
+        localStorage.setItem("token", this.user.info.accessToken);
+        localStorage.setItem("idToken", result._tokenResponse.oauthIdToken);
+
+        console.log(result);
         // Make a POST request to your backend API
-        fetch('https://us-central1-testjsonloop.cloudfunctions.net/app/api/auth/signin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
+        const res = await services.sendDataLoginGoogle({
+          googleUser:
+          {
+            name: this.user.info.displayName,
+            email: this.user.info.email
           },
-          body: JSON.stringify({
-            googleUser: {
-              name: displayName,
-              email: email
-            },
-            googleToken: googleToken
-          })
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Backend response:', data);
-          // Handle further actions if needed
-        })
-        .catch(error => {
-          console.error('Error during sign-in:', error);
+          googleToken: this.user.info.accessToken
         });
+        this.user.role = res.user.role;
       } catch (error) {
-        console.error("Error during sign-in:", error);
+        console.log("Error during sign-in:", error);
       }
-    },
-    checkLoginState() {
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          user.getIdToken().then(token => {
-            localStorage.setItem("userToken", token);
-            console.log("User is logged in:", user);
-            this.userProfile = user;
-            this.showLogout = false; // Hide logout initially
-          }).catch(error => {
-            console.error("Error getting token:", error);
-          });
-        }
-      });
     },
     async onLogout() {
       try {
         await signOut(auth);
-        localStorage.removeItem("userToken");
-        this.userProfile = null;
-        console.log("User logged out");
+        localStorage.removeItem("token");
+        this.user = { info: null, role: "user" };
       } catch (error) {
         console.error("Error during logout:", error);
+      }
+    },
+    async autoLogin() {
+      const idToken = localStorage.getItem("idToken");
+      const accessToken = localStorage.getItem("token");
+      if (idToken && accessToken) {
+        const credential =  GoogleAuthProvider.credential(idToken);
+
+        const googleLogin = await signInWithCredential(auth, credential);
+        this.user.info = googleLogin.user;
+        const res = await services.sendDataLoginGoogle({
+          googleUser:
+          {
+            name: this.user.info.displayName,
+            email: this.user.info.email
+          },
+          googleToken: this.user.info.accessToken
+        });
+        this.user.role = res.user.role;
       }
     },
     updateQuestionCounts(hardness) {
@@ -372,17 +360,17 @@ export default {
     },
     async onGenerate() {
       this.showAI = !this.showAI;
-      this.showGenerate = !this.showGenerate;
+      this.creating = true;
+      this.quiz = [];
+      window.location.href = "#generate";
       if (this.selectedGenerate == "1") {
-        window.location.href = "#conceptDefinition";
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
           lesson: this.selectedLesson,
         });
       } else if (this.selectedGenerate == "2") {
-        window.location.href = "#quiz";
-        const token = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImYwOGU2ZTNmNzg4ZDYwMTk0MDA1ZGJiYzE5NDc0YmY5Mjg5ZDM5ZWEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiSGFpc2UiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jTE9NTkNwbkN4aS1nT2k1cUZrYWo4eWxLeFluejB0N1YzWEcza04xRURWN01OMFFOUjI9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vdGVzdGpzb25sb29wIiwiYXVkIjoidGVzdGpzb25sb29wIiwiYXV0aF90aW1lIjoxNzE5NjMwMzE0LCJ1c2VyX2lkIjoielgyaFRRZEJTR2M5d0RqeEZKeHd6blhDZ01CMyIsInN1YiI6InpYMmhUUWRCU0djOXdEanhGSnh3em5YQ2dNQjMiLCJpYXQiOjE3MTk2MzAzMTQsImV4cCI6MTcxOTYzMzkxNCwiZW1haWwiOiJuZ3V5ZW52YW5waHVvbmc1NjQ2QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTE0NzYwNTQ1ODU0MDE3ODE2MDAzIl0sImVtYWlsIjpbIm5ndXllbnZhbnBodW9uZzU2NDZAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.EFkgLzrasYKULzLHXhO0Dhqhbz8_QNvCBpGqPVjTcA05u1ybzhyBFeTAQ67KFlpa0JHi6n9QiiIlGXFe2UrcH0NUvGZ01IfG0i_SiifOuA6eR-qbpuIp4On7aCullgyBQddCdQ1odTVx8BC9ubb33Ikih1DGzgzeFXtuLNq9bjwBrNvDewX0y-5_-Rvqz1obgm2aQQRJhWa33b7GcbVMrhEa4xBzF6BbqWESo3ISCtSqOygYLNAJfF6wfetBh0CTSHUC1vLi9tnQ1sOahGOnoum85yMaFoALrkErBxhvpCR0mI-Dayo-58KmIN-7ZBgxPqRNm7KMu739sskOhJSv_g";
+        const token = localStorage.getItem("token");
         const quiz = await services.createQuiz(token, {
           courseId: this.selectedCourse,
           levelId: this.selectedLevel,
@@ -398,14 +386,12 @@ export default {
         });
         this.quiz = quiz;
       } else if (this.selectedGenerate == "3") {
-        window.location.href = "#projectInstruction";
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
           lesson: this.selectedLesson,
         });
       } else if (this.selectedGenerate == "4") {
-        window.location.href = "#activity";
         console.log("Generating with:", {
           course: this.selectedCourse,
           level: this.selectedLevel,
@@ -414,6 +400,7 @@ export default {
           activityDescription: this.activityDescription,
         });
       }
+      this.creating = false;
     },
   },
   mounted() {
@@ -467,9 +454,11 @@ export default {
   height: 400px;
   background-color: var(--background-color);
   overflow-y: auto;
+
   &::-webkit-scrollbar {
-    display: none; /* Ẩn thanh cuộn */
-}
+    display: none;
+    /* Ẩn thanh cuộn */
+  }
 }
 
 .navbar-brand {
@@ -515,7 +504,7 @@ export default {
   font-size: var(--text-subtitle);
 }
 
-.user-info{
+.user-info {
   font-family: 'Metropolis', sans-serif;
   font-size: var(--text-subtitle);
   margin-left: auto;
@@ -527,7 +516,7 @@ export default {
   right: 0;
   width: 80px;
   background-color: var(--background-color);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   border-radius: 5px;
   display: none;
 }
@@ -643,31 +632,42 @@ export default {
   }
 }
 
-.main {
+.main,
+.footer {
   width: 700px;
   margin: auto;
   margin-bottom: 50px;
 }
 
-@media screen and (max-width: 575px){
-  .chat-ai{
+.footer {
+  min-height: 200px;
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 0px 0px 1px;
+  border-radius: 10px;
+}
+
+@media screen and (max-width: 575px) {
+  .chat-ai {
     right: 15px;
     bottom: 15px;
     width: 50px;
     height: 50px;
   }
-  .navbar{
+
+  .navbar {
     width: 95%;
     right: 10px;
     bottom: 40px;
   }
-  .main{
+
+  .main,
+  .footer {
     width: 95%;
     margin: auto;
   }
 }
 
-.hardness, .question-counts {
+.hardness,
+.question-counts {
   width: 100px;
 }
 
@@ -713,5 +713,70 @@ export default {
   color: red;
   font-size: 14px;
   margin-top: 10px;
+}
+
+.creating {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading {
+  --speed-of-animation: 0.9s;
+  --gap: 6px;
+  --first-color: #4c86f9;
+  --second-color: #49a84c;
+  --third-color: #f6bb02;
+  --fourth-color: #f6bb02;
+  --fifth-color: #2196f3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100px;
+  gap: 6px;
+  height: 100px;
+}
+
+
+.loading span {
+  width: 4px;
+  height: 50px;
+  background: var(--first-color);
+  animation: scale var(--speed-of-animation) ease-in-out infinite;
+}
+
+.loading span:nth-child(2) {
+  background: var(--second-color);
+  animation-delay: -0.8s;
+}
+
+.loading span:nth-child(3) {
+  background: var(--third-color);
+  animation-delay: -0.7s;
+}
+
+.loading span:nth-child(4) {
+  background: var(--fourth-color);
+  animation-delay: -0.6s;
+}
+
+.loading span:nth-child(5) {
+  background: var(--fifth-color);
+  animation-delay: -0.5s;
+}
+
+@keyframes scale {
+
+  0%,
+  40%,
+  100% {
+    transform: scaleY(0.05);
+  }
+
+  20% {
+    transform: scaleY(1);
+  }
 }
 </style>

@@ -75,7 +75,27 @@ const services = {
                 console.error('Error fetching lesson:', error);
                 throw error; // Ném lỗi để phương thức gọi xử lý
             }
+    },
+    sendDataLoginGoogle: async ({googleUser: { name, email}, googleToken}) => {
+        try {
+            const response = await fetch(`${baseUrl}/auth/signin`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({
+                  googleUser: {
+                    name,
+                    email
+                  },
+                  googleToken
+                })
+              });
+            return response.json();
+        } catch (error) {
+            return error.json();
         }
+    }
 
 }
 
