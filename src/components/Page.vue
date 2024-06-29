@@ -100,7 +100,7 @@
       <Level id="level" v-if="selectedLevel" :level="level" />
       <Lesson id="lesson" v-if="selectedLesson" />
       <ConceptDefinition id="conceptDefinition" v-if="selectedGenerate === '1'" />
-      <Quiz id='quiz' v-if="selectedGenerate === '2'" />
+      <Quiz id='quiz' v-if="selectedGenerate === '2'" :quiz="quiz" />
       <ProjectInstruction id="projectInstruction" v-if="selectedGenerate === '3'" />
       <Activity id="activity" v-if="selectedGenerate === '4'" />
     </main>
@@ -143,6 +143,7 @@ export default {
       selectedHardness: [],
       course: {},
       level: {},
+      quiz: [],
       typequiz: [
         { id: 1, name: "Multiple Choice" },
         { id: 2, name: "True/False" },
@@ -216,7 +217,7 @@ export default {
         console.error('Error fetching courses:', error)
       }
     },
-    onGenerate() {
+    async onGenerate() {
 
       this.showAI = !this.showAI;
       this.showGenerate = !this.showGenerate;
@@ -228,16 +229,22 @@ export default {
           lesson: this.selectedLesson,
         });
       } else if (this.selectedGenerate == "2") {
-        window.location.href = "#quiz"
-        console.log("Generating with:", {
-          course: this.selectedCourse,
-          level: this.selectedLevel,
-          lesson: this.selectedLesson,
-          generate: this.selectedGenerate,
-          types: this.selectedTypes,
-          numberQuiz: this.selectedNumberQuiz,
-          hardness: this.selectedHardness,
+        window.location.href = "#quiz";
+        const token = "eyJhbGciOiJSUzI1NiIsImtpZCI6ImYwOGU2ZTNmNzg4ZDYwMTk0MDA1ZGJiYzE5NDc0YmY5Mjg5ZDM5ZWEiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoiSGFpc2UiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jTE9NTkNwbkN4aS1nT2k1cUZrYWo4eWxLeFluejB0N1YzWEcza04xRURWN01OMFFOUjI9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vdGVzdGpzb25sb29wIiwiYXVkIjoidGVzdGpzb25sb29wIiwiYXV0aF90aW1lIjoxNzE5NDgxNjc4LCJ1c2VyX2lkIjoielgyaFRRZEJTR2M5d0RqeEZKeHd6blhDZ01CMyIsInN1YiI6InpYMmhUUWRCU0djOXdEanhGSnh3em5YQ2dNQjMiLCJpYXQiOjE3MTk0ODE2NzgsImV4cCI6MTcxOTQ4NTI3OCwiZW1haWwiOiJuZ3V5ZW52YW5waHVvbmc1NjQ2QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTE0NzYwNTQ1ODU0MDE3ODE2MDAzIl0sImVtYWlsIjpbIm5ndXllbnZhbnBodW9uZzU2NDZAZ21haWwuY29tIl19LCJzaWduX2luX3Byb3ZpZGVyIjoiZ29vZ2xlLmNvbSJ9fQ.NH50dzLAJ3yt-Uh7lrO3ebjLnprtJPMn2hV6roIDNoTMGNWljI_cjD8Lty8N8fA2zDOvjd51yH1V6xzuY6Obn3WE62sl8NqyWiyEfFl0viDoG-Tpw1g97Hhe9JZ34K7u-2t9ktjrKtK42uB6TNossRP7taR3Ewo3OcyiBoOftDqLYwRsoE368K-RLx5xZp5UdFioUnzLkg5zbI7Y4b6NSAcBrpN4XebVb14ASmu8f9GBNAQbuBz0JzRwL-FXcZxQaEw2gXiyv-80VFKyDzLo0ElabNwjfpJm5YC9vf4V0oQUyItgJqp65OvcShtf-LVsOWdtRrDXHRf2rVw4ObCOFg";
+        const quiz = await services.createQuiz(token, {
+          courseId: this.selectedCourse,
+          levelId: this.selectedLevel,
+          lessonId: this.selectedLesson,
+          remerberCheckQuestionNum: 2,
+          questionTypes: ["Multiple Choice"],
+          understandCheckQuestionNum: 3,
+          applyCheckQuestionNum: 4,
+          analyzeCheckQuestionNum: 8,
+          evaluateCheckQuestionNum: 5,
+          createCheckQuestionNum: 1,
+          previousConcepts: 1
         });
+        this.quiz = quiz;
       } else if (this.selectedGenerate == "3") {
         window.location.href = "#projectInstruction"
         console.log("Generating with:", {
@@ -258,7 +265,7 @@ export default {
     },
     onLoginGG : async () => {
       
-    }
+    },
   },
   mounted() {
     this.selectedCourse = "";
@@ -271,8 +278,6 @@ export default {
 .body {
   width: 100%;
   position: relative;
-  display: flex;
-  justify-content: space-between;
 }
 
 .chat-ai {
@@ -425,5 +430,24 @@ export default {
 .main {
   width: 700px;
   margin: auto;
+  margin-bottom: 50px;
+}
+
+@media screen and (max-width: 575px){
+  .chat-ai{
+    right: 15px;
+    bottom: 15px;
+    width: 50px;
+    height: 50px;
+  }
+  .navbar{
+    width: 95%;
+    right: 10px;
+    bottom: 40px;
+  }
+  .main{
+    width: 95%;
+    margin: auto;
+  }
 }
 </style>

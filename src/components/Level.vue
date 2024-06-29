@@ -43,8 +43,7 @@ export default {
 
 <style scoped>
 .level {
-    max-width: 800px;
-    min-width: 500px;
+    width: 100%;
     padding: 10px 20px;
     border-radius: 5px;
     margin-top: 20px;

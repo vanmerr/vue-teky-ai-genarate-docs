@@ -49,13 +49,33 @@ const services = {
     },
     getLesson: async (courseId, levelId, lessonId) => {
         try {
-            const response = await axios.get(`https://us-central1-testjsonloop.cloudfunctions.net/app/api/lessons/find?courseId=${courseId}&levelId=${levelId}&lessonId=${lessonId}`);
+            const response = await axios.get(`${baseUrl}/lessons/find?courseId=${courseId}&levelId=${levelId}&lessonId=${lessonId}`);
             return response.data; // Trả về dữ liệu lấy được từ API
         } catch (error) {
             console.error('Error fetching lesson:', error);
             throw error; // Ném lỗi để phương thức gọi xử lý
         }
-    }
+    },
+    createQuiz: async (token, body = {courseId, levelId, lessonId, 
+        remerberCheckQuestionNum, understandCheckQuestionNum, 
+        applyCheckQuestionNum, analyzeCheckQuestionNum,evaluateCheckQuestionNum,
+        createCheckQuestionNum, questionTypes: [], previousConcepts}) => {
+            const headers = { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            try {
+               const response = await fetch(`${baseUrl}/chat/generateQuiz`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(body)
+               });
+               return response.json(); 
+            } catch (error) {
+                console.error('Error fetching lesson:', error);
+                throw error; // Ném lỗi để phương thức gọi xử lý
+            }
+        }
 
 }
 
