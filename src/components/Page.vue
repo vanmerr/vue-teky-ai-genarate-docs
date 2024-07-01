@@ -84,7 +84,7 @@
               <label>{{ hardness }}:</label>
               <select v-model="questionCounts[hardness.toLowerCase()]" :disabled="selectedHardness.length === 0"
                 @change="adjustQuestionCounts(hardness)">
-                <option v-for="n in 16" :key="n - 1" :value="n - 1">{{ n - 1 }}</option>
+                <option v-for="n in availableQuestionCount(hardness)" :key="n" :value="n">{{ n }}</option>
               </select>
             </div>
           </div>
@@ -180,19 +180,35 @@ export default {
       level: {},
       quiz: [],
       typequiz: [
-        { id: 1, name: "Multiple Choice" },
-        { id: 2, name: "True/False" },
-        { id: 3, name: "Short Answer" },
-        { id: 4, name: "Fill in the Blanks" },
-        { id: 5, name: "Matching" },
-        { id: 6, name: "Essay" },
-        { id: 7, name: "Diagram Labeling" },
+        { id: 1, name: "True/False" },
+        { id: 2, name: "Multiple Choice" },
+        { id: 3, name: "Multiple Response" },
+        { id: 4, name: "Type In" },
+        { id: 5, name: "Matching Graded" },
+        { id: 6, name: "Sequence" },
+        { id: 7, name: "Numeric" },
+        { id: 8, name: "Yes/No" },
+        { id: 9, name: "Pick One" },
+        { id: 10, name: "Pick Many" },
+        { id: 11, name: "Short Answer" },
+        { id: 12, name: "Numeric Survey" },
+        { id: 13, name: "Ranking" },
+        { id: 14, name: "Matching Survey" },
+        { id: 15, name: "Essay" },
+        { id: 16, name: "Info Slide" },
+        { id: 17, name: "Draw the Words" },
+        { id: 18, name: "Hotspot Question" },
+        { id: 19, name: "Fill in the Blanks" }
       ],
-      hardnessLevels: ["Easy", "Medium", "Hard"],
+      hardnessLevels: ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create", "Previous Concepts"],
       questionCounts: {
-        easy: 0,
-        medium: 0,
-        hard: 0
+        remember: 1,
+        understand: 1,
+        apply: 1,
+        analyze: 1,
+        evaluate: 1,
+        create: 1,
+        previousconcepts: 1,
       },
       courses: [],
       levels: [],
@@ -209,10 +225,10 @@ export default {
   },
   computed: {
     totalQuestions() {
-      return this.questionCounts.easy + this.questionCounts.medium + this.questionCounts.hard;
+      return Object.values(this.questionCounts).reduce((total, count) => total + count, 0);
     },
     isMaxQuestionsReached() {
-      return this.totalQuestions >= 30;
+      return this.totalQuestions > 30;
     }
   },
   methods: {
@@ -323,40 +339,29 @@ export default {
     updateQuestionCounts(hardness) {
       const lowercaseHardness = hardness.toLowerCase();
       if (this.selectedHardness.includes(hardness)) {
-        const availableCount = this.availableQuestionCount(hardness);
-        this.questionCounts[lowercaseHardness] = availableCount > 0 ? availableCount : 0;
+        this.questionCounts[lowercaseHardness] = 1; // Set minimum to 1
+        this.adjustQuestionCounts();
       } else {
         this.questionCounts[lowercaseHardness] = 0;
       }
-      this.adjustTotalQuestions();
+    },
+    adjustQuestionCounts() {
+      const totalSelectedQuestions = Object.values(this.questionCounts).reduce((total, count) => total + count, 0);
+      if (totalSelectedQuestions > 30) {
+        let excess = totalSelectedQuestions - 30; // Calculate the excess
+        const sortedHardness = Object.keys(this.questionCounts).sort((a, b) => this.questionCounts[b] - this.questionCounts[a]);
+        for (let hardness of sortedHardness) {
+          if (excess <= 0) break;
+          const reduction = Math.min(excess, this.questionCounts[hardness] - 1);
+          this.questionCounts[hardness] -= reduction;
+          excess -= reduction;
+        }
+      }
     },
     availableQuestionCount(hardness) {
       const currentTotal = this.totalQuestions - this.questionCounts[hardness.toLowerCase()];
-      return Math.min(30 - currentTotal, 15);
-    },
-    adjustQuestionCounts(changedHardness) {
-      this.adjustTotalQuestions();
-      this.selectedHardness.forEach(hardness => {
-        if (hardness !== changedHardness) {
-          const availableCount = this.availableQuestionCount(hardness);
-          this.questionCounts[hardness.toLowerCase()] = Math.min(
-            this.questionCounts[hardness.toLowerCase()],
-            availableCount
-          );
-        }
-      });
-    },
-    adjustTotalQuestions() {
-      if (this.totalQuestions > 30) {
-        let excess = this.totalQuestions - 30; // Calculate the excess
-        for (let i = this.selectedHardness.length - 1; i >= 0; i--) { // Iterate in reverse order
-          const hardness = this.selectedHardness[i].toLowerCase(); // Get the hardness
-          const reduction = Math.min(excess, this.questionCounts[hardness]); // Reduce the excess
-          this.questionCounts[hardness] -= reduction; // Update the question count for the hardness
-          excess -= reduction; // Reduce the excess
-          if (excess === 0) break; // Stop if we've reduced all excess
-        }
-      }
+      const availableCount = Math.min(30 - currentTotal, 15);
+      return Array.from({ length: availableCount + 1 }, (_, i) => i); // Tạo mảng từ 0 đến availableCount
     },
     async onGenerate() {
       this.showAI = !this.showAI;
@@ -415,7 +420,7 @@ export default {
         this.questionCounts[deselectedHardness.toLowerCase()] = 0;
       }
       // Redistribute questions when a new hardness is selected
-      this.adjustTotalQuestions();
+      this.adjustQuestionCounts();
     }
   }
 };
