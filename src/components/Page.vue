@@ -380,15 +380,16 @@ export default {
           courseId: this.selectedCourse,
           levelId: this.selectedLevel,
           lessonId: this.selectedLesson,
-          remerberCheckQuestionNum: 2,
-          questionTypes: ["Multiple Choice"],
-          understandCheckQuestionNum: 3,
-          applyCheckQuestionNum: 4,
-          analyzeCheckQuestionNum: 8,
-          evaluateCheckQuestionNum: 5,
-          createCheckQuestionNum: 1,
-          previousConcepts: 1
+          questionTypes: this.selectedTypes,
+          rememberCheckQuestionNum: this.questionCounts.remember,
+          understandCheckQuestionNum: this.questionCounts.understand,
+          applyCheckQuestionNum: this.questionCounts.apply,
+          analyzeCheckQuestionNum: this.questionCounts.analyze,
+          evaluateCheckQuestionNum: this.questionCounts.evaluate,
+          createCheckQuestionNum: this.questionCounts.create,
+          previousConcepts: this.questionCounts.previousconcepts
         });
+        console.log("Quiz data being sent to API:", quiz);
         this.quiz = quiz;
       } else if (this.selectedGenerate == "3") {
         console.log("Generating with:", {
