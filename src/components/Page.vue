@@ -118,7 +118,7 @@
     <main class="main">
       <Course id="course" v-if="selectedCourse" :course="course" />
       <Level id="level" v-if="selectedLevel" :level="level" />
-      <Lesson id="lesson" v-if="selectedLesson" />
+      <Lesson id="lesson" v-if="selectedLesson" :lesson="lesson" />
     </main>
     <footer id="generate" class="footer" v-if="selectedGenerate">
       <div class="creating" v-if="creating">
@@ -176,7 +176,8 @@ export default {
       selectedHardness: [],
       course: {},
       level: {},
-      quiz: [],
+      quiz: Array,
+      lesson: {},
       typequiz: [
         { id: 1, name: "True/False" },
         { id: 2, name: "Multiple Choice" },
@@ -243,7 +244,8 @@ export default {
       await Promise.all([this.fetchLessons(), this.fetchLevel()]);
       window.location.href = "#level";
     },
-    onChangeLesson() {
+    async onChangeLesson() {
+      await this.fetchLesson();
       window.location.href = "#lesson";
     },
     async fetchCourses() {
@@ -279,6 +281,14 @@ export default {
         this.level = await services.getLevel(this.selectedCourse, this.selectedLevel);
       } catch (error) {
         console.error('Error fetching level:', error);
+      }
+    },
+    async fetchLesson() {
+      try {
+        this.lesson = await services.getLesson(this.selectedCourse, this.selectedLevel, this.selectedLesson);
+        console.log(this.lesson);
+      } catch (error) {
+        console.error('Error fetching lessons:', error);
       }
     },
     async onLoginGG() {
@@ -371,7 +381,7 @@ export default {
         });
       } else if (this.selectedGenerate == "2") {
         const token = localStorage.getItem("token");
-        const quiz = await services.createQuiz(token, {
+        const result = await services.createQuiz(token, {
           courseId: this.selectedCourse,
           levelId: this.selectedLevel,
           lessonId: this.selectedLesson,
@@ -384,8 +394,21 @@ export default {
           createCheckQuestionNum: this.questionCounts.create,
           previousConcepts: this.questionCounts.previousconcepts
         });
-        console.log("Quiz data being sent to API:", quiz);
-        this.quiz = quiz;
+        console.log("Quiz data being sent to API:", {
+          courseId: this.selectedCourse,
+          levelId: this.selectedLevel,
+          lessonId: this.selectedLesson,
+          questionTypes: this.selectedTypes,
+          rememberCheckQuestionNum: this.questionCounts.remember,
+          understandCheckQuestionNum: this.questionCounts.understand,
+          applyCheckQuestionNum: this.questionCounts.apply,
+          analyzeCheckQuestionNum: this.questionCounts.analyze,
+          evaluateCheckQuestionNum: this.questionCounts.evaluate,
+          createCheckQuestionNum: this.questionCounts.create,
+          previousConcepts: this.questionCounts.previousconcepts
+        });
+        this.quiz = result;
+        console.log(result);
       } else if (this.selectedGenerate == "3") {
         console.log("Generating with:", {
           course: this.selectedCourse,
@@ -446,6 +469,7 @@ export default {
 }
 
 .navbar {
+  z-index: 9999;
   position: fixed;
   bottom: 125px;
   right: 50px;

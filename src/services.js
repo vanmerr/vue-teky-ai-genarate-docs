@@ -49,7 +49,7 @@ const services = {
     },
     getLesson: async (courseId, levelId, lessonId) => {
         try {
-            const response = await axios.get(`${baseUrl}/lessons/find?courseId=${courseId}&levelId=${levelId}&lessonId=${lessonId}`);
+            const response = await axios.get(`${baseUrl}/lessons/findbyid?courseId=${courseId}&levelId=${levelId}&lessonId=${lessonId}`);
             return response.data; // Trả về dữ liệu lấy được từ API
         } catch (error) {
             console.error('Error fetching lesson:', error);

@@ -34,7 +34,7 @@
 export default {
   name: 'Quiz',
   props: {
-    quiz: []
+    quiz: Array
   }
 }
 </script>
