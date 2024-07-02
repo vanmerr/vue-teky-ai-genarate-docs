@@ -87,10 +87,8 @@
                 <option v-for="n in availableQuestionCount(hardness)" :key="n" :value="n">{{ n }}</option>
               </select>
             </div>
+            <div class="total-questions">Total Questions: {{ totalQuestions }}/20</div>
           </div>
-        </div>
-        <div v-if="isMaxQuestionsReached" class="error-message">
-          Maximum number of questions (30) reached.
         </div>
         <!-- select activity options -->
         <div class="selectActivity" v-if="selectedGenerate == '4'">
@@ -202,13 +200,13 @@ export default {
       ],
       hardnessLevels: ["Remember", "Understand", "Apply", "Analyze", "Evaluate", "Create", "Previous Concepts"],
       questionCounts: {
-        remember: 1,
-        understand: 1,
-        apply: 1,
-        analyze: 1,
-        evaluate: 1,
-        create: 1,
-        previousconcepts: 1,
+        remember: 0,
+        understand: 0,
+        apply: 0,
+        analyze: 0,
+        evaluate: 0,
+        create: 0,
+        previousconcepts: 0,
       },
       courses: [],
       levels: [],
@@ -226,9 +224,6 @@ export default {
   computed: {
     totalQuestions() {
       return Object.values(this.questionCounts).reduce((total, count) => total + count, 0);
-    },
-    isMaxQuestionsReached() {
-      return this.totalQuestions > 30;
     }
   },
   methods: {
@@ -347,8 +342,8 @@ export default {
     },
     adjustQuestionCounts() {
       const totalSelectedQuestions = Object.values(this.questionCounts).reduce((total, count) => total + count, 0);
-      if (totalSelectedQuestions > 30) {
-        let excess = totalSelectedQuestions - 30; // Calculate the excess
+      if (totalSelectedQuestions > 20) {
+        let excess = totalSelectedQuestions - 20; // Calculate the excess
         const sortedHardness = Object.keys(this.questionCounts).sort((a, b) => this.questionCounts[b] - this.questionCounts[a]);
         for (let hardness of sortedHardness) {
           if (excess <= 0) break;
@@ -360,7 +355,7 @@ export default {
     },
     availableQuestionCount(hardness) {
       const currentTotal = this.totalQuestions - this.questionCounts[hardness.toLowerCase()];
-      const availableCount = Math.min(30 - currentTotal, 15);
+      const availableCount = Math.min(20 - currentTotal, 15);
       return Array.from({ length: availableCount + 1 }, (_, i) => i); // Tạo mảng từ 0 đến availableCount
     },
     async onGenerate() {
