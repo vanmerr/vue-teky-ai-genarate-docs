@@ -1,238 +1,159 @@
 <template>
-  <div>
-    <!-- Content for Lesson -->
-    <!-- Add your specific content here -->
-    <h4 class="lessonName">Bài {{lessonNumber}}: {{lessonName}}</h4>
-    <p class="body">Chủ đề bài học:<span class="phara">{{ lessonTopic }}</span></p>
-    <p class="body">Mục tiêu bài học:</p>
-    <p v-html="lessonGoal"></p>
-    <p class="body">Công cụ:<span class="phara">{{lessonTools}}</span></p>
-    <p class="body">Lesson Concepts</p>
-    <div v-for="(concepts, category) in lessonConcepts" :key="category">
-      <p class="concept">{{ category }}</p>
-      <ul>
-        <li v-for="concept in concepts" :key="concept">{{ concept }}</li>
-      </ul>
+  <div class="lesson" v-if="lesson.lessonName">
+    <div class="heading">
+      <span>{{ `Bài ${lesson.lessonNumber} - ${lesson.lessonName}` }}</span>
     </div>
-    <p class="body">Lesson Materials</p>
-    <ul>
-      <li v-for="(value, key) in lessonMaterials" :key="key">
-        {{ key }}: {{ value }}
-      </li>
-    </ul>
-    <p class="body">Dự án bài học:<span class="phara">{{ lessonProject.projectId }}</span></p>
-    <p class="body">Materials:</p>
-    <div v-for="(materialType, materialTypeKey) in materials" :key="materialTypeKey">
-      <p class="concept">{{ materialTypeKey }}</p>
-      <ul>
-        <li v-for="(material, key) in materialType" :key="key">
-          {{ key }}: {{ material }}
-        </li>
-      </ul>
-    </div>
-      <p class="body">Dự án:</p>
-      <p><b>Project ID:</b> {{ project.projectId }}</p>
-      <p><b>Project Name:</b> {{ project.projectName }}</p>
-      <p><b>Project Description:</b> {{ project.projectDescription }}</p>
-      <p><b>Related Concepts</b></p>
-      <ul>
-        <li v-for="(concept, index) in project.projectRelatedConcepts" :key="index">{{ concept }}</li>
-      </ul>
-      <p><b>Project Tools</b></p>
-      <ul>
-        <li v-for="(tool, index) in project.projectTools" :key="index">{{ tool }}</li>
-      </ul>
-      <p><b>Project Instruction:</b><a class="link" :href="project.projectInstruction">{{ project.projectInstruction }}</a></p>
-      <p><b>Tool Details</b></p>
-      <div v-for="(tool, index) in project.tools" :key="index">
-      <ul>
-        <li><i>Tool ID:</i> {{ tool.toolId }}</li>
-        <li><i>Tool Name:</i> {{ tool.toolName }}</li>
-        <li><i>Tool Description:</i> {{ tool.toolDescription }}</li>
-        <li><i>Tool Version:</i> {{ tool.toolVersion }}</li>
-        <li><i>Tool Types:</i> {{ tool.toolTypes }}</li>
-      </ul>
-    </div>
-    <p class="body">Công cụ</p>
-    <ul>
-      <div v-for="(tool, index) in tools" :key="index">
-        <li>Tool ID: {{ tool.toolId }}</li>
-        <li>Tool Name: {{ tool.toolName }}</li>
-        <li>Tool Description: {{ tool.toolDescription }}</li>
-        <li>Tool Version: {{ tool.toolVersion }}</li>
-        <li>Tool Types: {{ tool.toolTypes }}</li>
+    <div class="container">
+      <div class="description">
+        <span class="title">{{ `Chủ đề bài học:  ${lesson.lessonTopic}` }}</span>
       </div>
-    </ul>
+      <div class="goal">
+        <span class="title">Mục tiêu bài học</span>
+        <p v-html="lesson.lessonGoal"></p>
+      </div>
+      <div class="tools">
+        <span class="title">Công cụ</span>
+        <ul class="list-tool">
+          <li class="tool" v-for="tool in lesson.lessonTools" :key="tool">
+            <span class="sub-title">{{ String(tool).toUpperCase() }}</span>
+          </li>
+        </ul>
+      </div>
+      <div class="concepts">
+        <span class="title">Khái niệm bài học</span>
+        <div v-for="(concepts, category) in lesson.lessonConcepts" :key="category">
+          <p class="sub-title">{{ category == "conceptComputerScience"? 
+          "Khoa học máy tính": category == "conceptScience"? 
+          "Khoa học": category == "conceptTech"? 
+          "Công nghệ": category == "conceptEngineering"? 
+          "Kỹ thuật" :category == "conceptArt"? 
+          "Nghệ thuật": category == "conceptMath"?
+          "Toán": "Kỹ năng"  }}</p>
+          <ul class="list-concept">
+            <li v-html="concept" v-for="concept in concepts" :key="concept"></li>
+          </ul>
+        </div>
+      </div>
+      <div class="materials-type">
+        <span class="title">Tài liệu</span>
+        <div v-for="(material, materialTypeKey) in lesson.materials" :key="materialTypeKey">
+          <p class="sub-title">{{ String(material.materialType).toUpperCase()}}</p>
+          <ul class="list-material">
+            <li>
+              <b>{{ material.materialName }}:</b> <a :href="material.materialLink" target="_blank">{{ material.materialLink }}</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="project-details">
+        <span class="title">Dự án</span>
+        <p><b>Tên dự án:</b> {{ lesson.project.projectName}}</p>
+        <p><b>Mô tả dự án:</b> {{ lesson.project.projectDescription }}</p>
+        <div>
+          <span class="sub-title">Khái niệm liên quan</span>
+          <ul class="list-concept">
+            <li v-for="(concept, index) in lesson.project.projectRelatedConcepts" :key="index">{{ concept }}</li>
+          </ul>
+        </div>
+        <div>
+          <span class="sub-title">Công cụ</span>
+          <ul class="list-tool">
+            <li v-for="(tool, index) in lesson.project.projectTools" :key="index">{{ tool.toolName }}</li>
+          </ul>
+        </div>
+        <p><b>Giới thiệu dự án:</b> <a class="link" :href="lesson.project.projectInstruction" target="_blank">{{ lesson.project.projectInstruction }}</a></p>
+      </div>
+      <div class="tools-details">
+        <span class="title">Mô tả chi tiết công cụ</span>
+        <div v-for="(tool, index) in lesson.project.tools" :key="index">
+          <ul class="list-tool">
+            <li><i>Tool ID:</i> {{ tool.toolId }}</li>
+            <li><i>Tool Name:</i> {{ tool.toolName }}</li>
+            <li><i>Tool Description:</i> {{ tool.toolDescription }}</li>
+            <li><i>Tool Version:</i> {{ tool.toolVersion }}</li>
+            <li><i>Tool Types:</i> {{ tool.toolTypes }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
   name: 'Lesson',
-  // Add component logic if needed
-  data(){
-    return{
-    "lessonId": "blg-hp01-b01",
-    "courseId": "blg",
-    "levelId": "blg-hp01",
-    "lessonName": "Giới thiệu bản thân",
-    "lessonNumber": 1,
-    "lessonImage": "https://drive.google.com/file/d/1JvkZ6Ztgqsp4H6EldONsmuzKB6qwxJnA/view?usp=sharing",
-    "lessonTopic": "Chào người bạn mới CodeKitten",
-    "lessonGoal": "Kiến thức, khái niệm: <br>- Khái niệm lập trình và công cụ lập trình kéo thả CodeKitten.<br>- Các thành phần thuộc giao diện CodeKitten.<br>- Kỹ thuật gắn/gỡ khối lệnh trong lập trình dạng kéo thả. <br>- Kỹ thuật thêm/hiệu chỉnh nhân vật, hình nền trong CodeKitten.<br>- Kỹ thuật thêm phần mở rộng (extension) vào project.<br>- Khái niệm tuần tự trong cuộc sống và lập trình.<br>- Khối lệnh when flag click, when this sprite clicked (nhóm lệnh Event).<br>- Khối lệnh say..., say...for...secs (nhóm lệnh Look).<br>- Khối lệnh translate...to... (extension Translate).<br>- Các thông tin nên/không nên chia sẻ khi giới thiệu về bản thân.",
-    "lessonTools": "Codekitten",
-    "lessonConcepts": {
-        "conceptComputerScience": [
-            "ConceptA",
-            "ConceptB",
-            "ConceptC",
-            "ConceptD"
-        ],
-        "conceptScience": [
-            "Concept1",
-            "Concept2",
-            "Concept3",
-            "Concept4"
-        ],
-        "conceptTech": [
-            "--- o ---"
-        ],
-        "conceptEngineering": [
-            "--- o ---"
-        ],
-        "conceptArt": [
-            "--- o ---"
-        ],
-        "conceptMath": [
-            "--- o ---"
-        ],
-        "conceptSkill": [
-            "ConceptI",
-            "ConceptII",
-            "ConceptIII",
-            "ConceptIV"
-        ]
-    },
-    "lessonMaterials": {
-        "lessonPlanId": "blg-hp01-b01-lessonplan",
-        "slideId": "blg-hp01-b01-slide",
-        "summaryId": "blg-hp01-b01-summary",
-        "quizId": "blg-hp01-b01-quiz",
-        "videoId": "blg-hp01-b01-video"
-    },
-    "lessonProject": {
-        "projectId": "coding-block-animation-0001"
-    },
-    "materials": {
-        "lessonPlan": {
-            "materialId": "blg-hp01-b01-lessonplan",
-            "lessonName": "Giới thiệu bản thân",
-            "materialName": "Lesson Plan - Giới thiệu bản thân",
-            "materialType": "lesson-plan",
-            "materialLink": "https://teky.edu.vn/blg-hp01-b01-lessonplan"
-        },
-        "slide": {
-            "materialId": "blg-hp01-b01-slide",
-            "lessonName": "Giới thiệu bản thân",
-            "materialName": "Slide - Giới thiệu bản thân",
-            "materialType": "slide",
-            "materialLink": "https://teky.edu.vn/blg-hp01-b01-slide"
-        },
-        "summary": {
-            "materialId": "blg-hp01-b01-summary",
-            "lessonName": "Giới thiệu bản thân",
-            "materialName": "Summary - Giới thiệu bản thân",
-            "materialType": "summary",
-            "materialLink": "https://teky.edu.vn/blg-hp01-b01-summary"
-        },
-        "quiz": {
-            "materialId": "blg-hp01-b01-quiz",
-            "lessonName": "Giới thiệu bản thân",
-            "materialName": "Quiz - Giới thiệu bản thân",
-            "materialType": "quiz",
-            "materialLink": "https://teky.edu.vn/blg-hp01-b01-quiz"
-        },
-        "video": {
-            "materialId": "blg-hp01-b01-video",
-            "lessonName": "Giới thiệu bản thân",
-            "materialName": "Video - Giới thiệu bản thân",
-            "materialType": "video",
-            "materialLink": "https://teky.edu.vn/blg-hp01-b01-video"
-        }
-    },
-    "project": {
-        "projectId": "coding-block-animation-0001",
-        "projectName": "Giới thiệu bản thân",
-        "projectDescription": "Một đoạn hoạt hình được tạo với CodeKitten trong đó nhân vật giới thiệu bản thân bằng nhiều ngôn ngữ khác nhau. Tính năng giới thiệu đa ngôn ngữ có được do sử dụng phần mở rộng AI \"Translate\", là một dịch vụ của Google. ",
-        "projectRelatedConcepts": [
-            "ConceptA",
-            "ConceptB",
-            "ConceptC",
-            "ConceptD",
-            "Concept1",
-            "Concept2",
-            "Concept3",
-            "Concept4"
-        ],
-        "projectTools": [
-            "codekitten"
-        ],
-        "projectInstruction": "https://teky.edu.vn/coding-block-animation-0001",
-        "tools": [
-            {
-                "toolId": "codekitten",
-                "toolName": "Code Kitten",
-                "toolDescription": "Nền tảng lập trình thân thiện với người mới bắt đầu được thiết kế đặc biệt cho trẻ nhỏ. Nó thường sử dụng các khối hình ảnh và trò chơi để giới thiệu các khái niệm lập trình cơ bản.",
-                "toolVersion": "--- o ---",
-                "toolTypes": "block-coding"
-            }
-        ]
-    },
-    "tools": [
-        {
-            "toolId": "codekitten",
-            "toolName": "Code Kitten",
-            "toolDescription": "Nền tảng lập trình thân thiện với người mới bắt đầu được thiết kế đặc biệt cho trẻ nhỏ. Nó thường sử dụng các khối hình ảnh và trò chơi để giới thiệu các khái niệm lập trình cơ bản.",
-            "toolVersion": "--- o ---",
-            "toolTypes": "block-coding"
-        }
-      ]
-    }
+  props: {
+    lesson: Object
   }
 }
 </script>
 
 <style scoped>
-/* Component-specific styles */
-* {
-  margin-left: 20px;
+.lesson {
+  margin: 20px 0;
+  width: 100%;
+  padding: 10px 20px;
+  border-radius: 5px;
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 0px 0px 1px;
 }
-  .lessonName{
-    color: var(--primary-color);
+
+.heading {
+  margin-bottom: 40px;
+}
+
+.heading span {
+  font-size: var(--text-heading);
+  color: var(--primary-color);
+  font-weight: var(--font-weight-heading);
+}
+
+.container {
+  .description,
+  .goal,
+  .tools,
+  .concepts,
+  .materials-type,
+  .project-details,
+  .tools-details {
+    margin-bottom: 20px;
+
+    .title,
+    .sub-title {
+      color: var(--secondary-color);
+      font-weight: var(--font-weight-title);
+      font-size: var(--text-title);
+      padding-bottom: 10px;
+      display: block;
+    }
+    .sub-title{
+      padding-left: 20px;
+      font-size: var(--text-subtitle);
+      color: var(--primary-color);
+    }
+
+    .list-tool,
+    .list-concept,
+    .list-material {
+      list-style: none;
+      padding-left: 40px;
+      
+      li {
+        margin: 5px 0;
+      }
+    }
   }
-  .body{
-    color: var(--secondary-color);
-    font-size: var(--text-title);
-    margin-bottom: 0px;
-  }
-  .instruction a{
-    color: var(--secondary-color);
-    font: bold;
-  }
-  .link{
-    color: var(--primary-color);
-    font: bold;
-    font-size: var(--text-normal);
-  }
-  .phara{
-    color: var(--black-color);
-    font-size: var(--text-normal);
-    margin-bottom: 0px;
-  }
-  .concept{
-    color: var(--primary-color);
-    font-size: 18px;
-    font: bold;
-    margin-bottom: 0px;
-  }
+}
+
+.topic,
+.tools-list {
+  color: var(--black-color);
+  font-size: var(--text-normal);
+  margin-bottom: 0px;
+}
+
+.link {
+  color: var(--primary-color);
+  font-weight: bold;
+  font-size: var(--text-normal);
+}
 </style>
