@@ -28,6 +28,7 @@
               {{ course.courseName }}
             </option>
           </select>
+          <button v-if="selectedCourse" @click="onGetCourse">Get</button>
         </div>
         <!-- select level -->
         <div class="select-container">
@@ -37,6 +38,7 @@
               {{ level.levelName }}
             </option>
           </select>
+          <button v-if="selectedLevel" @click="onGetLevel">Get</button>
         </div>
         <!-- select lesson -->
         <div class="select-container">
@@ -46,6 +48,7 @@
               {{ lesson.lessonName }}
             </option>
           </select>
+          <button v-if="selectedLesson && user.role == 'admin'" @click="onGetLesson">Get</button>
         </div>
         <!-- select generate -->
         <div class="select-container" v-if="selectedLesson && user.role === 'admin'">
@@ -133,9 +136,10 @@
         </div>
       </div>
       <ConceptDefinition id="conceptDefinition" v-if="selectedGenerate === '1'" />
-      <Quiz id='quiz' v-if="selectedGenerate === '2'" :quiz="quiz" />
+      <Quiz id='quiz' v-if="selectedGenerate === '2' && quiz.length > 0" :quiz="quiz" />
       <ProjectInstruction id="projectInstruction" v-if="selectedGenerate === '3'" />
       <Activity id="activity" v-if="selectedGenerate === '4'" />
+      <div class="try-again" v-if="error">Thử lại</div>
     </footer>
   </div>
 </template>
@@ -166,6 +170,7 @@ export default {
   data() {
     return {
       creating: false,
+      error: false,
       showAI: false,
       selectedCourse: "",
       selectedLevel: "",
@@ -178,7 +183,7 @@ export default {
       selectedHardness: [],
       course: {},
       level: {},
-      quiz: Array,
+      quiz: [],
       lesson: {},
       typequiz: [
         { id: 1, name: "True/False" },
@@ -236,20 +241,29 @@ export default {
     clickAI() {
       this.showAI = !this.showAI;
     },
-    async onCourseChange() {
+    onCourseChange() {
       this.selectedLevel = "";
       this.selectedLesson = "";
       this.selectedGenerate = "";
-      await Promise.all([this.fetchLevels(), this.fetchCourse()]);
-      window.location.href = "#course";
+      this.fetchLevels();
     },
-    async onLevelChange() {
+    onLevelChange() {
       this.selectedLesson = "";
       this.selectedGenerate = "";
-      await Promise.all([this.fetchLessons(), this.fetchLevel()]);
+      this.fetchLessons()
+    },
+    async onGetCourse(){
+      this.showAI = false;
+      this.fetchCourse();
+      window.location.href = "#course";
+    },
+    async onGetLevel(){
+      this.showAI = false;
+      this.fetchLevel();
       window.location.href = "#level";
     },
-    async onChangeLesson() {
+    async onGetLesson() {
+      this.showAI = false;
       await this.fetchLesson();
       window.location.href = "#lesson";
     },
@@ -302,9 +316,6 @@ export default {
         this.user.info = auth.currentUser;
         localStorage.setItem("token", this.user.info.accessToken);
         localStorage.setItem("idToken", result._tokenResponse.oauthIdToken);
-
-        console.log(result);
-        // Make a POST request to your backend API
         const res = await services.sendDataLoginGoogle({
           googleUser:
           {
@@ -322,6 +333,7 @@ export default {
       try {
         await signOut(auth);
         localStorage.removeItem("token");
+        localStorage.removeItem("idToken");
         this.user = { info: null, role: "user" };
       } catch (error) {
         console.error("Error during logout:", error);
@@ -391,28 +403,18 @@ export default {
           levelId: this.selectedLevel,
           lessonId: this.selectedLesson,
           questionTypes: this.selectedTypes,
-          rememberCheckQuestionNum: this.questionCounts.remember,
-          understandCheckQuestionNum: this.questionCounts.understand,
-          applyCheckQuestionNum: this.questionCounts.apply,
-          analyzeCheckQuestionNum: this.questionCounts.analyze,
-          evaluateCheckQuestionNum: this.questionCounts.evaluate,
-          createCheckQuestionNum: this.questionCounts.create,
+          rememberCheckQuestionNum: this.questionCounts.remember.toString(),
+          understandCheckQuestionNum: this.questionCounts.understand.toString(),
+          applyCheckQuestionNum: this.questionCounts.apply.toString(),
+          analyzeCheckQuestionNum: this.questionCounts.analyze.toString(),
+          evaluateCheckQuestionNum: this.questionCounts.evaluate.toString(),
+          createCheckQuestionNum: this.questionCounts.create.toString(),
           previousConcepts: this.questionCounts.previousconcepts
         });
-        console.log("Quiz data being sent to API:", {
-          courseId: this.selectedCourse,
-          levelId: this.selectedLevel,
-          lessonId: this.selectedLesson,
-          questionTypes: this.selectedTypes,
-          rememberCheckQuestionNum: this.questionCounts.remember,
-          understandCheckQuestionNum: this.questionCounts.understand,
-          applyCheckQuestionNum: this.questionCounts.apply,
-          analyzeCheckQuestionNum: this.questionCounts.analyze,
-          evaluateCheckQuestionNum: this.questionCounts.evaluate,
-          createCheckQuestionNum: this.questionCounts.create,
-          previousConcepts: this.questionCounts.previousconcepts
-        });
-        this.quiz = result;
+        if(result.messeage) {
+          this.error = true;
+          this.quiz = []
+        }else this.quiz = result;
         console.log(result);
       } else if (this.selectedGenerate == "3") {
         console.log("Generating with:", {
@@ -578,6 +580,7 @@ export default {
 .selectedGenerate,
 .selectQuiz,
 .selectActivity {
+  display: flex;
   width: 95%;
   margin: 10px auto;
   height: 40px;
@@ -599,6 +602,17 @@ export default {
   font-size: var(--text-subtitle);
   color: var(--secondary-color);
   cursor: pointer;
+}
+
+.select-container button {
+  margin-left: 10px;
+  width: 60px;
+  height: 40px;
+  font-size: var(--text-subtitle);
+  color: var(--white-color);
+  background-color: var(--primary-color);
+  cursor: pointer;
+  transition: .5s;
 }
 
 .selectedGenerate {

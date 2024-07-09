@@ -1,5 +1,5 @@
 <template>
-    <div class="quiz" v-if="quiz.length > 0">
+    <div class="quiz" v-if="quiz.length > 0 && quiz">
       <span class="tilte">Quiz generate</span>
       <table>
         <thead>
@@ -16,13 +16,13 @@
         </thead>
         <tbody>
           <tr  v-for="question in quiz">
-            <td class="stt">{{ question.ID }}</td>
+            <td class="stt">{{ question.STT }}</td>
             <td class="type">{{ question.questionType }}</td>
-            <td class="questionDifficulty">{{ question.questionDifficulty }}</td>
+            <td class="questionDifficulty">{{ question.difficultyQuestion }}</td>
             <td class="question">{{ question.questionText }}</td>
-            <td class="answer">{{ question.answer1}}</td>
-            <td class="answer">{{ question.answer2}}</td>
-            <td class="answer">{{ question.answer3}}</td>
+            <td class="answer">{{ question.answerA}}</td>
+            <td class="answer">{{ question.answerB}}</td>
+            <td class="answer">{{ question.answerC}}</td>
             <td class="correctAnswer">{{ question.correctAnswer}}</td>
           </tr>
         </tbody>

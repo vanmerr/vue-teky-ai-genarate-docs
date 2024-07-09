@@ -65,6 +65,7 @@ const services = {
                     'Content-Type': 'application/json'
                 }
             try {
+                
                const response = await fetch(`${baseUrl}/chat/generateQuiz`, {
                 method: 'POST',
                 headers: headers,
@@ -73,7 +74,7 @@ const services = {
                return response.json(); 
             } catch (error) {
                 console.error('Error fetching lesson:', error);
-                throw error; // Ném lỗi để phương thức gọi xử lý
+                throw error; 
             }
     },
     sendDataLoginGoogle: async ({googleUser: { name, email}, googleToken}) => {
