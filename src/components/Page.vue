@@ -90,7 +90,7 @@
                 <option v-for="n in availableQuestionCount(hardness)" :key="n" :value="n">{{ n }}</option>
               </select>
             </div>
-            <div class="total-questions">Total Questions: {{ totalQuestions }}/20</div>
+            <div class="total-questions">Total Questions: {{ totalQuestions }}/30</div>
           </div>
         </div>
         <!-- select activity options -->
@@ -364,8 +364,8 @@ export default {
     },
     adjustQuestionCounts() {
       const totalSelectedQuestions = Object.values(this.questionCounts).reduce((total, count) => total + count, 0);
-      if (totalSelectedQuestions > 20) {
-        let excess = totalSelectedQuestions - 20; // Calculate the excess
+      if (totalSelectedQuestions > 30) {
+        let excess = totalSelectedQuestions - 30; // Calculate the excess
         const sortedHardness = Object.keys(this.questionCounts).sort((a, b) => this.questionCounts[b] - this.questionCounts[a]);
         for (let hardness of sortedHardness) {
           if (excess <= 0) break;
@@ -377,7 +377,7 @@ export default {
     },
     availableQuestionCount(hardness) {
       const currentTotal = this.totalQuestions - this.questionCounts[hardness.toLowerCase()];
-      const availableCount = Math.min(20 - currentTotal, 15);
+      const availableCount = Math.min(30 - currentTotal, 15);
       return Array.from({ length: availableCount + 1 }, (_, i) => i); // Tạo mảng từ 0 đến availableCount
     },
     async onGenerate() {
