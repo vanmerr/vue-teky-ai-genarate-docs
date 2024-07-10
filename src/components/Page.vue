@@ -90,10 +90,8 @@
                 <option v-for="n in availableQuestionCount(hardness)" :key="n" :value="n">{{ n }}</option>
               </select>
             </div>
+            <div class="total-questions">Total Questions: {{ totalQuestions }}/30</div>
           </div>
-        </div>
-        <div v-if="isMaxQuestionsReached" class="error-message">
-          Maximum number of questions (30) reached.
         </div>
         <!-- select activity options -->
         <div class="selectActivity" v-if="selectedGenerate == '4'">
@@ -232,9 +230,6 @@ export default {
   computed: {
     totalQuestions() {
       return Object.values(this.questionCounts).reduce((total, count) => total + count, 0);
-    },
-    isMaxQuestionsReached() {
-      return this.totalQuestions > 30;
     }
   },
   methods: {
