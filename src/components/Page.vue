@@ -119,7 +119,7 @@
       </div>
     </nav>
     <main class="main">
-      <Course id="course" v-if="selectedCourse" :course="course" />
+      <Course id="course"  v-if="selectedCourse" :course="course" />
       <Level id="level" v-if="selectedLevel" :level="level" />
       <Lesson id="lesson" v-if="selectedLesson" :lesson="lesson" />
     </main>
@@ -249,18 +249,18 @@ export default {
     },
     async onGetCourse(){
       this.showAI = false;
-      this.fetchCourse();
-      window.location.href = "#course";
+      await this.fetchCourse();
+      window.location.href = '#course';
     },
     async onGetLevel(){
       this.showAI = false;
-      this.fetchLevel();
-      window.location.href = "#level";
+      await this.fetchLevel();
+      window.location.href = '#level';
     },
     async onGetLesson() {
       this.showAI = false;
       await this.fetchLesson();
-      window.location.href = "#lesson";
+      window.location.href = '#lesson';
     },
     async fetchCourses() {
       try {
